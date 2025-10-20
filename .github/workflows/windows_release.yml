@@ -2,7 +2,6 @@
 
 name: Build & Release Windows App (Portable)
 
-# This workflow runs when you push a tag that starts with "v" (e.g., v1.0, v1.0.1)
 on:
   push:
     tags:
@@ -10,45 +9,43 @@ on:
 
 jobs:
   build-and-release:
-    # Use the latest Windows runner
     runs-on: windows-latest
     
     steps:
-      # 1. Get your code from the repository
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # 2. Set up the Flutter SDK
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
 
-      # 3. Get Flutter dependencies
       - name: Install dependencies
         run: flutter pub get
 
-      # 4. Build the Windows app (this is the portable version)
       - name: Build Windows
         run: flutter build windows --release
-        
-      # 5. Zip the portable build
-      # This takes all the files inside 'build/windows/runner/Release'
-      # and zips them into a single file named based on your tag.
+
+      # --- NEW DEBUGGING STEP ---
+      # This will show us what folders were created by the build command
+      - name: List build directory contents
+        run: |
+          echo "--- Listing contents of build/windows/runner ---"
+          Get-ChildItem -Path build/windows/runner
+        shell: pwsh
+      # --- END OF DEBUGGING STEP ---
+
       - name: Zip portable build
         run: Compress-Archive -Path build/windows/runner/Release\* -DestinationPath "windows-portable-${{ github.ref_name }}.zip"
         shell: pwsh
 
-      # 6. Create the GitHub Release
       - name: Create GitHub Release
         id: create_release
         uses: softprops/action-gh-release@v1
         with:
-          # This creates a draft release. Go to your repo's "Releases" page to publish it.
           draft: true
           prerelease: false
-          name: ${{ github.ref_name }} # e.g., "v1.0.1"
+          name: ${{ github.ref_name }}
           tag_name: ${{ github.ref }}
           files: |
             windows-portable-${{ github.ref_name }}.zip
-            # This line finds the .zip file we just created

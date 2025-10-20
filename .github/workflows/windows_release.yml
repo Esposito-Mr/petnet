@@ -23,23 +23,18 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
-      # --- MODIFIED STEP ---
-      # Added --verbose to see all build logs
       - name: Build Windows
-        run: flutter build windows --release --verbose
+        # We can remove --verbose now, but it's fine to leave it
+        run: flutter build windows --release
 
-      # --- MODIFIED DEBUGGING STEP ---
-      # This will list folders to see what was created
-      - name: List build directory contents
-        run: |
-          echo "--- Listing contents of build ---"
-          Get-ChildItem -Path build -ErrorAction SilentlyContinue
-          echo "--- Listing contents of build/windows ---"
-          Get-ChildItem -Path build/windows -ErrorAction SilentlyContinue
-        shell: pwsh
+      # This step is no longer needed, so I've removed it.
+      # - name: List build directory contents
+      #   ...
 
+      # --- MODIFIED STEP ---
+      # Added 'x64' to the path to match the build output
       - name: Zip portable build
-        run: Compress-Archive -Path build/windows/runner/Release\* -DestinationPath "windows-portable-${{ github.ref_name }}.zip"
+        run: Compress-Archive -Path build/windows/x64/runner/Release\* -DestinationPath "windows-portable-${{ github.ref_name }}.zip"
         shell: pwsh
 
       - name: Create GitHub Release

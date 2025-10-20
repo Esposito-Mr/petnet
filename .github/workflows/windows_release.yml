@@ -9,6 +9,12 @@ on:
 
 jobs:
   build-and-release:
+    # --- THIS BLOCK IS NEW ---
+    # Grant permissions for the GITHUB_TOKEN to create releases
+    permissions:
+      contents: write
+    # --- END OF NEW BLOCK ---
+
     runs-on: windows-latest
     
     steps:
@@ -24,15 +30,8 @@ jobs:
         run: flutter pub get
 
       - name: Build Windows
-        # We can remove --verbose now, but it's fine to leave it
         run: flutter build windows --release
 
-      # This step is no longer needed, so I've removed it.
-      # - name: List build directory contents
-      #   ...
-
-      # --- MODIFIED STEP ---
-      # Added 'x64' to the path to match the build output
       - name: Zip portable build
         run: Compress-Archive -Path build/windows/x64/runner/Release\* -DestinationPath "windows-portable-${{ github.ref_name }}.zip"
         shell: pwsh
@@ -41,6 +40,10 @@ jobs:
         id: create_release
         uses: softprops/action-gh-release@v1
         with:
+          # --- THIS LINE IS NEW ---
+          # Pass the token that has the 'contents: write' permission
+          token: ${{ secrets.GITHUB_TOKEN }}
+          
           draft: true
           prerelease: false
           name: ${{ github.ref_name }}

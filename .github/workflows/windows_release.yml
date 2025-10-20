@@ -23,17 +23,20 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
+      # --- MODIFIED STEP ---
+      # Added --verbose to see all build logs
       - name: Build Windows
-        run: flutter build windows --release
+        run: flutter build windows --release --verbose
 
-      # --- NEW DEBUGGING STEP ---
-      # This will show us what folders were created by the build command
+      # --- MODIFIED DEBUGGING STEP ---
+      # This will list folders to see what was created
       - name: List build directory contents
         run: |
-          echo "--- Listing contents of build/windows/runner ---"
-          Get-ChildItem -Path build/windows/runner
+          echo "--- Listing contents of build ---"
+          Get-ChildItem -Path build -ErrorAction SilentlyContinue
+          echo "--- Listing contents of build/windows ---"
+          Get-ChildItem -Path build/windows -ErrorAction SilentlyContinue
         shell: pwsh
-      # --- END OF DEBUGGING STEP ---
 
       - name: Zip portable build
         run: Compress-Archive -Path build/windows/runner/Release\* -DestinationPath "windows-portable-${{ github.ref_name }}.zip"

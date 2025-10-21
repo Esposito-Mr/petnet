@@ -87,8 +87,8 @@ jobs:
         with:
           name: android-build
           path: ${{ env.APP_NAME }}-${{ github.ref_name }}.apk
-
-  # ------ JOB 4: BUILD FOR LINUX ------
+          
+  # ------ JOB 4: BUILD FOR LINUX (REVISED) ------
   build-linux:
     runs-on: ubuntu-latest
     steps:
@@ -98,7 +98,7 @@ jobs:
         uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
-          cache: true # Enable dependency caching
+          cache: true
       - name: Install Linux build dependencies
         run: |
           sudo apt-get update -y
@@ -107,8 +107,11 @@ jobs:
         run: flutter pub get
       - name: Build Linux executable
         run: flutter build linux --release
-      - name: Activate flutter_distributor
-        run: dart pub global activate flutter_distributor
+      # This step activates the tool AND adds its location to the system path for the next steps
+      - name: Set up flutter_distributor
+        run: |
+          dart pub global activate flutter_distributor
+          echo "$HOME/.pub-cache/bin" >> $GITHUB_PATH
       - name: Create Linux packages (.deb and .rpm)
         run: flutter_distributor package --platform linux --targets deb,rpm
       - name: Upload Linux DEB artifact

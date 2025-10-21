@@ -1,5 +1,3 @@
-# .github/workflows/windows_release.yml
-
 name: Build & Release Windows App (Portable)
 
 on:

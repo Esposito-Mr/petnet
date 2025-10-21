@@ -1,0 +1,119 @@
+name: Build & Release All Platforms
+
+# This workflow runs when you push a tag that starts with "v"
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  # ------ JOB 1: BUILD FOR WINDOWS ------
+  build-windows:
+    runs-on: windows-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+      - name: Install dependencies
+        run: flutter pub get
+      - name: Build Windows
+        run: flutter build windows --release
+      - name: Zip portable build
+        run: Compress-Archive -Path build/windows/x64/runner/Release\* -DestinationPath "windows-portable-${{ github.ref_name }}.zip"
+        shell: pwsh
+      # Upload the zip as an artifact for the release job
+      - name: Upload Windows artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-build
+          path: windows-portable-${{ github.ref_name }}.zip
+
+  # ------ JOB 2: BUILD FOR MACOS ------
+  build-macos:
+    runs-on: macos-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+      - name: Install dependencies
+        run: flutter pub get
+      - name: Build macOS
+        run: flutter build macos --release
+      - name: Zip portable build
+        # ⚠️ IMPORTANT: Change 'petnet.app' if your app name is different!
+        run: |
+          zip -r "macos-portable-${{ github.ref_name }}.zip" "build/macos/Build/Products/Release/petnet.app"
+      # Upload the zip as an artifact for the release job
+      - name: Upload macOS artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-build
+          path: macos-portable-${{ github.ref_name }}.zip
+
+  # ------ JOB 3: BUILD FOR ANDROID (NEW!) ------
+  build-android:
+    runs-on: ubuntu-latest # Android builds run best on Linux
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      # Set up Java, which is required for Android builds
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '11'
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+      - name: Install dependencies
+        run: flutter pub get
+      - name: Build Android APK
+        run: flutter build apk --release
+      # Find the built APK and rename it to match the tag
+      - name: Rename APK
+        run: mv build/app/outputs/flutter-apk/app-release.apk "android-release-${{ github.ref_name }}.apk"
+      # Upload the APK as an artifact for the release job
+      - name: Upload Android artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-build
+          path: android-release-${{ github.ref_name }}.apk
+
+  # ------ JOB 4: CREATE THE RELEASE (UPDATED!) ------
+  create-release:
+    # This job runs only after all three build jobs have succeeded
+    needs: [build-windows, build-macos, build-android]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # Permission to create the release
+      
+    steps:
+      # Download all the artifacts (zips and apk) from the previous jobs
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          # This will create a directory named 'artifacts'
+          path: artifacts
+
+      - name: Create GitHub Release
+        id: create_release
+        uses: softprops/action-gh-release@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          draft: true
+          prerelease: false
+          name: ${{ github.ref_name }} # Release name (e.g., "v1.0.8")
+          tag_name: ${{ github.ref }}
+          # This glob pattern finds all files in all downloaded artifact folders
+          files: |
+            artifacts/*/*

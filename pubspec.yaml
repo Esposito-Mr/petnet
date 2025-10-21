@@ -89,3 +89,41 @@ flutter_native_splash:
 inno_bundle:
   id: 56d8c4b0-ade8-11f0-8de2-3788bca016e1
   publisher: arkmandel
+
+  # This whole section is for the flutter_distributor package.
+distributor_options:
+  # You can optionally specify your GitHub repository here.
+  # github: your_github_username/your_repo_name
+
+  distributors:
+    - linux
+
+  # Specific configuration for all Linux packages
+  linux_options:
+    # This is the name your package will have in package managers (e.g., apt install petnet)
+    package_name: petnet
+
+    # A longer description for the package manager.
+    description: A social network for pets and their owners.
+
+    # A path to the icon for your application's .desktop entry.
+    # Should be a high-resolution PNG (e.g., 512x512).
+    icon: assets/petnet_splash_screen.png
+
+    # The person or organization maintaining this package.
+    maintainer: 'João Esposito<joaoesposito@usp.br>'
+
+    # A list of system libraries your app depends on to run.
+    # libgtk-3-0 is almost always required.
+    depends:
+       - libgtk-3-0
+       # Add other system dependencies here if your app uses them.
+
+    # Optional fields specifically for the .rpm package (for Fedora, CentOS)
+    rpm_options:
+      group: Application/Utility
+      license: MIT # Replace with your actual license
+
+    # Optional fields specifically for the .deb package (for Debian, Ubuntu)
+    deb_options:
+      category: utility
